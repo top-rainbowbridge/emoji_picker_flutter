@@ -1,6 +1,7 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:emoji_picker_flutter/src/recent_emoji.dart';
 import 'package:flutter/material.dart';
+
 import 'emoji_picker_internal_utils.dart';
 
 /// Helper class that provides extended usage
@@ -20,23 +21,32 @@ class EmojiPickerUtils {
     return EmojiPickerInternalUtils().getRecentEmojis();
   }
 
+  /// Returns all available emoji entities
+  Future<List<Emoji>> allAvailableEmojiEntities() async {
+    if (_allAvailableEmojiEntities.isNotEmpty) {
+      return allAvailableEmojiEntities();
+    }
+    final emojiPickerInternalUtils = EmojiPickerInternalUtils();
+
+    final availableCategoryEmoji =
+        await emojiPickerInternalUtils.getAvailableCategoryEmoji();
+
+    // Set all the emoji entities
+    availableCategoryEmoji.forEach((_, emojis) {
+      final emojiEntities =
+          emojis.entries.map((emoji) => Emoji(emoji.key, emoji.value));
+      _allAvailableEmojiEntities.addAll(emojiEntities);
+    });
+
+    return _allAvailableEmojiEntities;
+  }
+
   /// Search for related emoticons based on keywords
   Future<List<Emoji>> searchEmoji(String keyword) async {
     if (keyword.isEmpty) return [];
 
-    if (_allAvailableEmojiEntities.isEmpty) {
-      final emojiPickerInternalUtils = EmojiPickerInternalUtils();
-
-      final availableCategoryEmoji =
-          await emojiPickerInternalUtils.getAvailableCategoryEmoji();
-
-      // Set all the emoji entities
-      availableCategoryEmoji.forEach((_, emojis) {
-        final emojiEntities =
-            emojis.entries.map((emoji) => Emoji(emoji.key, emoji.value));
-        _allAvailableEmojiEntities.addAll(emojiEntities);
-      });
-    }
+    // refresh emoji entities if needed.
+    await allAvailableEmojiEntities();
 
     return _allAvailableEmojiEntities
         .where(
